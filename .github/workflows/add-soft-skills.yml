@@ -1,7 +1,9 @@
 name: Add Soft Skills
 
 on:
-  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/add-soft-skills.yml'
 
 permissions:
   contents: write
@@ -15,12 +17,15 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
 
-          # Keep the DEPI experience status concise.
-          s = s.replace('Data Scientist Track · Final Score: 95%</div><div class="details"><p>90 technical training hours plus 30 freelancing/coaching hours.</p>', 'Data Scientist Track · Final Score: 95%</div><div class="details"><p>90 technical training hours plus 30 freelancing/coaching hours.</p>', 1)
-          s = s.replace('<h3>DEPI Data Scientist Training</h3><div class="org">Training & Practical Development</div><div class="details"><p>Structured technical training supported by freelancing and coaching activities. Final score: 95%.</p></div>', '<h3>DEPI Data Scientist Training</h3><div class="org">In Progress</div><div class="details"><p>Currently developing practical skills through structured Data Scientist training, freelancing, and coaching activities.</p></div>', 1)
+          # Keep DEPI status as requested while retaining the verified score in Achievements.
+          pattern = re.compile(r'(<h3>DEPI Data Scientist Training</h3><div class="org">).*?(</div><div class="details"><p>).*?(</p>)', re.S)
+          s, n = pattern.subn(r'\1In Progress\2Currently developing practical skills through structured Data Scientist training, freelancing, and coaching activities.\3', s, count=1)
+          if n == 0:
+              raise SystemExit('DEPI timeline item not found')
 
           soft = '''<section id="soft-skills"><div class="wrap reveal"><div class="kicker">Professional Strengths</div><h2 class="title">Soft <span>Skills</span></h2><p class="copy">Professional skills that support clear communication, reliable teamwork, and effective data storytelling.</p><div class="skills-grid" style="margin-top:23px"><div class="skill"><i class="fa-solid fa-comments"></i><strong>Communication</strong><small>Clear and professional communication</small></div><div class="skill"><i class="fa-solid fa-people-group"></i><strong>Teamwork</strong><small>Collaboration and shared ownership</small></div><div class="skill"><i class="fa-solid fa-lightbulb"></i><strong>Problem Solving</strong><small>Structured thinking and practical solutions</small></div><div class="skill"><i class="fa-solid fa-clock"></i><strong>Time Management</strong><small>Organizing priorities and deadlines</small></div><div class="skill"><i class="fa-solid fa-person-chalkboard"></i><strong>Presentation</strong><small>Turning findings into clear stories</small></div><div class="skill"><i class="fa-solid fa-arrows-rotate"></i><strong>Adaptability</strong><small>Learning and adjusting to new challenges</small></div></div></div></section>'''
           marker = '</section><section id="projects">'
@@ -29,14 +34,18 @@ jobs:
                   raise SystemExit('Skills/projects section marker not found')
               s = s.replace(marker, '</section>' + soft + '<section id="projects">', 1)
 
+          # Add a navigation entry once.
+          if 'href="#soft-skills"' not in s:
+              s = s.replace('<a href="#projects">Projects</a>', '<a href="#soft-skills">Soft Skills</a><a href="#projects">Projects</a>', 1)
+
           p.write_text(s, encoding='utf-8')
           PY
-      - name: Commit
+      - name: Commit changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "feat: add soft skills and keep DEPI in progress"
+          git commit -m "feat: add soft skills and set DEPI in progress"
           git push
       - name: Remove temporary workflow
         if: always()
