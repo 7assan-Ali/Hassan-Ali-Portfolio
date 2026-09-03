@@ -1,0 +1,41 @@
+name: Add Photo Tagline
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add tagline around portrait
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          marker = '<div class="portrait-shell">'
+          if 'class="portrait-tagline"' not in s and marker in s:
+              s = s.replace(marker, '<div class="portrait-tagline"><i class="fa-solid fa-chart-line"></i><span>Data → Insights → Impact</span></div>' + marker, 1)
+              css = '.portrait-tagline{position:absolute;right:-38px;top:7%;z-index:5;display:flex;align-items:center;gap:8px;padding:10px 13px;border:1px solid #39d0c544;border-radius:999px;background:#07111fe8;backdrop-filter:blur(12px);box-shadow:0 14px 38px #0005;color:#dce8f4;font-size:.62rem;font-weight:800;letter-spacing:.03em;animation:taglineFloat 4s ease-in-out infinite}.portrait-tagline i{color:var(--accent)}@keyframes taglineFloat{50%{transform:translateY(-6px)}}@media(max-width:700px){.portrait-tagline{right:-8px;top:2%;font-size:.56rem;padding:8px 10px}}'
+              s = s.replace('</style>', css + '</style>', 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'feat: add photo tagline'
+          git push
+      - name: Remove temporary workflow
+        if: success()
+        run: |
+          rm -f .github/workflows/add-photo-tagline.yml
+          git add .github/workflows/add-photo-tagline.yml
+          git diff --cached --quiet || git commit -m 'chore: remove temporary workflow'
+          git push
