@@ -2,6 +2,8 @@
 
 Personal portfolio for **Hassan Ali — Data Analyst | AI & Data Science**.
 
+> I help businesses turn raw data into actionable insights and smarter decisions through Python, SQL, Excel, Power BI, and AI.
+
 ## Focus
 
 - Data Analysis & Business Intelligence
@@ -32,7 +34,7 @@ Fourth Year · Expected Graduation 2027
 
 ## Training & Credentials
 
-- Digital Egypt Pioneers Initiative (DEPI) — Data Scientist Track, final score 95%
+- Digital Egypt Pioneers Initiative (DEPI) — Data Scientist Track, In Progress
 - National Telecommunication Institute (NTI) — Data Analysis Training, final score 98%
 - IBM AI Developer Professional Certificate
 - Data Analytics Professional Certificate — DeepLearning.AI / Coursera
