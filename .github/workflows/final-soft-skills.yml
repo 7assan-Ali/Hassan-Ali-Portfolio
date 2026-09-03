@@ -1,0 +1,56 @@
+name: Finalize Portfolio
+
+on:
+  push:
+    paths:
+      - '.github/workflows/final-soft-skills.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update portfolio
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          # Update DEPI timeline status without depending on surrounding markup.
+          pat=re.compile(r'(<h3>DEPI Data Scientist Training</h3>\s*<div class="org">)[^<]*(</div>)',re.S)
+          s,n=pat.subn(r'\1In Progress\2',s,count=1)
+          if n==0: raise SystemExit('DEPI title not found')
+          # Add a polished Soft Skills section before Projects if possible, otherwise before main close.
+          if 'id="soft-skills"' not in s:
+              soft='''<section id="soft-skills"><div class="wrap reveal"><div class="kicker">Professional Strengths</div><h2 class="title">Soft <span>Skills</span></h2><p class="copy">Professional strengths that support effective collaboration, communication, and data storytelling.</p><div class="skills-grid" style="margin-top:23px"><div class="skill"><i class="fa-solid fa-comments"></i><strong>Communication</strong><small>Clear and professional communication</small></div><div class="skill"><i class="fa-solid fa-people-group"></i><strong>Teamwork</strong><small>Collaborative and reliable team player</small></div><div class="skill"><i class="fa-solid fa-lightbulb"></i><strong>Problem Solving</strong><small>Structured thinking and practical solutions</small></div><div class="skill"><i class="fa-solid fa-clock"></i><strong>Time Management</strong><small>Prioritizing tasks and meeting deadlines</small></div><div class="skill"><i class="fa-solid fa-person-chalkboard"></i><strong>Presentation</strong><small>Turning findings into clear stories</small></div><div class="skill"><i class="fa-solid fa-arrows-rotate"></i><strong>Adaptability</strong><small>Fast learning and flexible mindset</small></div></div></div></section>'''
+              if '<section id="projects"' in s:
+                  s=s.replace('<section id="projects"',soft+'<section id="projects"',1)
+              elif '</main>' in s:
+                  s=s.replace('</main>',soft+'</main>',1)
+              else:
+                  raise SystemExit('No insertion point found')
+          # Add navigation link once.
+          if 'href="#soft-skills"' not in s:
+              s=s.replace('<a href="#projects">','<a href="#soft-skills">Soft Skills</a><a href="#projects">',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit portfolio changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'feat: add soft skills and set DEPI in progress' || exit 0
+          git push
+      - name: Remove temporary workflow
+        if: always()
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          rm -f .github/workflows/final-soft-skills.yml
+          git add .github/workflows/final-soft-skills.yml
+          git diff --cached --quiet || git commit -m 'chore: remove temporary workflow'
+          git push || true
