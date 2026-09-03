@@ -1,0 +1,38 @@
+name: Fix Hero Photo Layout
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-hero-photo.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove all text overlays from profile photo
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          # Remove the visible text elements that sit on/around the portrait.
+          s = re.sub(r'<div[^>]*class=["\'][^"\']*(?:portrait-badge|float-card)[^"\']*["\'][^>]*>.*?</div>', '', s, flags=re.S|re.I)
+          # Remove any legacy text layer inside the portrait itself.
+          s = re.sub(r'<[^>]+class=["\'][^"\']*(?:portrait-label|portrait-overlay|image-label|image-overlay)[^"\']*["\'][^>]*>.*?</[^>]+>', '', s, flags=re.S|re.I)
+          # Disable the dark gradient overlay that can make the portrait look like it contains text.
+          s += '''\n<style id="clean-profile-photo">\n/* Clean profile photo: image only, no text overlays */\n.portrait:after{display:none!important}\n.portrait-badge,.float-card,.portrait-label,.portrait-overlay,.image-label,.image-overlay{display:none!important}\n.portrait img{position:relative;z-index:2;animation:cleanPortraitFloat 5s ease-in-out infinite}\n.portrait-shell{animation:cleanShellFloat 5s ease-in-out infinite}\n@keyframes cleanPortraitFloat{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}\n@keyframes cleanShellFloat{0%,100%{transform:rotate(2deg) translateY(0)}50%{transform:rotate(0deg) translateY(-10px)}}\n@media(prefers-reduced-motion:reduce){.portrait img,.portrait-shell{animation:none!important}}\n</style>\n'''
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit and remove temporary workflow
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'fix: make profile photo image-only with animation' || true
+          git rm .github/workflows/fix-hero-photo.yml
+          git commit -m 'chore: remove temporary hero photo fix workflow'
+          git push
