@@ -1,6 +1,9 @@
 name: Set DEPI In Progress
 
 on:
+  push:
+    paths:
+      - '.github/workflows/set-depi-in-progress.yml'
   workflow_dispatch:
 
 permissions:
