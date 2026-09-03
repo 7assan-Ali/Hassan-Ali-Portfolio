@@ -46,5 +46,6 @@ This portfolio is intentionally **frontend-only**. It uses static HTML, CSS and 
 
 ## Contact
 
-Email: hassanali.elnagy@gmail.com  
-GitHub: https://github.com/7assan-Ali
+- Email: hassanali.elnagy@gmail.com
+- GitHub: https://github.com/7assan-Ali
+- LinkedIn: https://www.linkedin.com/in/hassan-3li
