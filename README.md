@@ -15,13 +15,14 @@ Personal portfolio for **Hassan Ali — Data Analyst | AI & Data Science**.
 ## Featured Work
 
 - Olist E-Commerce Data Analysis
-- Used Car Dataset Analysis
-- BMW Sales Analysis
-- Cars Sales Power BI Dashboard
+- Used Car Price Trends
+- Power BI Car Sales Dashboard
+- Outlier Detection & Treatment
 - SQL Data Cleaning
 - Excel Data Analysis
-- Tableau Analytics Projects
-- Python Analytics Projects
+- Tableau Sales Analysis
+- Python Data Analysis Projects
+- E-Commerce System
 
 ## Education
 
@@ -32,7 +33,8 @@ Fourth Year · Expected Graduation 2027
 ## Training & Credentials
 
 - Digital Egypt Pioneers Initiative (DEPI) — Data Scientist Track, final score 95%
-- IBM AI Developer Professional Certificate — IBM / Coursera
+- National Telecommunication Institute (NTI) — Data Analysis Training, final score 98%
+- IBM AI Developer Professional Certificate
 - Data Analytics Professional Certificate — DeepLearning.AI / Coursera
 - Generative AI Bootcamp — freeCodeCamp
 
@@ -43,5 +45,4 @@ This portfolio is intentionally **frontend-only**. It uses static HTML, CSS and 
 ## Contact
 
 Email: hassanali.elnagy@gmail.com  
-GitHub: https://github.com/7assan-Ali  
-LinkedIn: https://www.linkedin.com/in/hassan-ali-1419a029a/
+GitHub: https://github.com/7assan-Ali
