@@ -1,0 +1,43 @@
+name: Set DEPI In Progress
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update DEPI status
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old = '<h3>DEPI Data Scientist Training</h3><div class="org">Training & Practical Development</div><div class="details"><p>Structured technical training supported by freelancing and coaching activities. Final score: 95%.</p></div>'
+          new = '<h3>DEPI Data Scientist Training</h3><div class="org">In Progress</div><div class="details"><p>Currently developing practical skills through structured Data Scientist training, freelancing, and coaching activities.</p></div>'
+          if old not in s:
+              raise SystemExit('Expected DEPI experience block was not found; no changes made.')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "update: mark DEPI training as in progress"
+          git push
+
+      - name: Remove temporary workflow
+        if: always()
+        run: |
+          rm -f .github/workflows/set-depi-in-progress.yml
+          git add .github/workflows/set-depi-in-progress.yml
+          git diff --cached --quiet || git commit -m "chore: remove temporary DEPI workflow"
+          git push || true
