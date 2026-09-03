@@ -1,0 +1,61 @@
+name: Refine Hero Layout
+
+on:
+  push:
+    paths:
+      - '.github/workflows/refine-hero-layout.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Refine hero
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('index.html')
+          html = p.read_text(encoding='utf-8')
+          html = re.sub(r'<style id="clean-profile-photo">.*?</style>', '', html, flags=re.S)
+          html = re.sub(r'<div[^>]*class="[^"]*(?:portrait-badge|float-card)[^"]*"[^>]*>.*?</div>', '', html, flags=re.S)
+          html = re.sub(r'<div[^>]*class="[^"]*(?:portrait-label|portrait-overlay|image-label|image-overlay)[^"]*"[^>]*>.*?</div>', '', html, flags=re.S)
+          css = '''
+          /* Hero refinement */
+          .hero{grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);gap:clamp(2.5rem,6vw,5.5rem)}
+          .hero-copy{max-width:720px}
+          .hero-visual{min-height:560px;isolation:isolate}
+          .hero-visual:before{width:430px;height:430px;opacity:.72;animation:pulse 5s ease-in-out infinite}
+          .hero-visual:after{width:530px;height:530px;opacity:.32;animation:spin 34s linear infinite}
+          .portrait-shell{width:min(390px,82vw);border-radius:42px;padding:7px;box-shadow:var(--shadow),0 0 95px var(--glow);animation:heroFloat 6s ease-in-out infinite}
+          .portrait{border-radius:36px}
+          .portrait img{animation:heroZoom 6s ease-in-out infinite;transform-origin:center center}
+          .portrait:after{display:none!important}
+          .portrait-badge,.float-card,.portrait-label,.portrait-overlay,.image-label,.image-overlay{display:none!important}
+          @keyframes heroFloat{0%,100%{transform:rotate(2deg) translate3d(0,0,0)}50%{transform:rotate(0deg) translate3d(0,-9px,0)}}
+          @keyframes heroZoom{0%,100%{transform:scale(1)}50%{transform:scale(1.018)}}
+          @media(max-width:1050px){.hero{grid-template-columns:1fr;gap:1rem}.hero-visual{order:-1;min-height:430px}.hero-copy{max-width:760px}}
+          @media(max-width:650px){.hero-visual{min-height:350px}.portrait-shell{width:250px}.hero-visual:before{width:300px;height:300px}.hero-visual:after{width:355px;height:355px}}
+          @media(prefers-reduced-motion:reduce){.portrait-shell,.portrait img{animation:none!important}}
+          '''
+          css = '\n'.join(line.strip() for line in css.splitlines() if line.strip())
+          html = html.replace('</style>', css + '\n</style>', 1)
+          html = re.sub(r'(</html>)\s*<style[^>]*>.*?</style>\s*$', r'\1\n', html, flags=re.S)
+          p.write_text(html, encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "design: refine hero composition" || exit 0
+          git push
+      - name: Remove temporary workflow
+        if: always()
+        run: |
+          git rm -f .github/workflows/refine-hero-layout.yml || true
+          git commit -m "chore: remove temporary hero workflow" || true
+          git push || true
