@@ -1,0 +1,52 @@
+name: Update Certificate Section
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    if: ${{ !contains(github.event.head_commit.message, '[skip cert update]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update portfolio certificate section
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('index.html')
+          html = path.read_text(encoding='utf-8')
+
+          css = '.cert-image{width:100%;height:190px;object-fit:cover;border-radius:16px;border:1px solid var(--line);background:var(--surface2);display:block;margin-bottom:1rem;cursor:zoom-in}.cert-image:hover{filter:brightness(1.06)}'
+          if '.cert-image{' not in html:
+              html = html.replace('</style>', css + '</style>', 1)
+
+          cert_section = '''<section id="certifications"><div class="wrap reveal"><div class="kicker">Certifications & Training</div><h2 class="title">Credentials in <span>Practice</span></h2><p class="copy">A visual collection of completed certificates and training achievements.</p><div class="certs" style="margin-top:1.4rem"><article class="cert"><img class="cert-image" src="IBM%20Data%20Analysis.jpg" alt="IBM Data Analysis certificate"><h3>Data Analytics Professional Certificate</h3><p>IBM · Data Analysis</p></article><article class="cert"><img class="cert-image" src="IBM%20Python.jpeg" alt="IBM Python certificate"><h3>Python for Data Science</h3><p>IBM · Python</p></article><article class="cert"><img class="cert-image" src="ITI%20Python.jpeg" alt="ITI Python certificate"><h3>Python Training</h3><p>ITI · Python</p></article><article class="cert"><img class="cert-image" src="Intro%20to%20AI.jpeg" alt="Introduction to AI certificate"><h3>Introduction to AI</h3><p>AI Fundamentals</p></article><article class="cert"><img class="cert-image" src="Introduction%20and%20Application.jpeg" alt="Introduction and Application certificate"><h3>Introduction & Application</h3><p>Artificial Intelligence</p></article><article class="cert"><img class="cert-image" src="NTI%20Data%20Analysis.jpeg" alt="NTI Data Analysis certificate"><h3>Data Analysis Training</h3><p>NTI · Final Score: <strong>98%</strong></p></article><article class="cert"><img class="cert-image" src="Prompt%20Engineering.jpeg" alt="Prompt Engineering certificate"><h3>Prompt Engineering</h3><p>Generative AI & Prompting</p></article><article class="cert"><div class="cert-icon"><i class="fa-solid fa-graduation-cap"></i></div><h3>Data Scientist Track</h3><p>Digital Egypt Pioneers Initiative · Final Score: 95%</p></article></div></div></section>'''
+          html, n = re.subn(r'<section id="certifications">.*?</section>', cert_section, html, count=1, flags=re.S)
+          if n != 1:
+              raise SystemExit('Certification section not found')
+
+          old_depi = '''<article class="timeline-item" onclick="this.classList.toggle('open')"><div class="dot"><i class="fa-solid fa-award"></i></div><div class="card"><h3>Digital Egypt Pioneers Initiative (DEPI)</h3><div class="org">Data Scientist Track · Final Score: 95%</div><div class="details"><p>90 technical training hours plus 30 freelancing/coaching hours. Click to expand or collapse.</p></div></div></article>'''
+          new_depi = old_depi + '''<article class="timeline-item" onclick="this.classList.toggle('open')"><div class="dot"><i class="fa-solid fa-chart-line"></i></div><div class="card"><h3>National Telecommunication Institute (NTI)</h3><div class="org">Data Analysis Training · Final Score: 98%</div><div class="details"><p>Completed Data Analysis training with a final score of 98%.</p></div></div></article>'''
+          if 'National Telecommunication Institute (NTI)' not in html:
+              if old_depi not in html:
+                  raise SystemExit('DEPI achievement block not found')
+              html = html.replace(old_depi, new_depi, 1)
+
+          path.write_text(html, encoding='utf-8')
+          PY
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "Update certificates as images and add NTI 98% score [skip cert update]"
+          git push
