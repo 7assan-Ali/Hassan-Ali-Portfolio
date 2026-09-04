@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://7assan-ali.github.io/Hassan-Ali-Portfolio/sitemap.xml
