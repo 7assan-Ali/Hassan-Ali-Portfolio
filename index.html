@@ -72,12 +72,15 @@ section{padding:125px 0 0}.section-top{display:flex;align-items:end;justify-cont
 @media(max-width:768px){html{overflow-x:hidden}body{overflow-x:hidden}.container{width:min(100% - 28px,1180px)}.hero{padding-top:30px}.hero-grid{grid-template-columns:1fr!important;gap:30px!important}.hero-copy{order:1}.hero-visual{order:2;max-width:420px;margin-inline:auto}.projects-grid,.skills-grid,.soft-skills-grid{grid-template-columns:1fr!important}.nav-links{gap:10px;flex-wrap:wrap}.nav-links a{font-size:12px}.section{padding-block:64px}.contact-form{width:100%}img{max-width:100%;height:auto}}
 @media(max-width:480px){.container{width:min(100% - 20px,1180px)}.hero h1{font-size:clamp(42px,13vw,64px)}.hero p{font-size:15px}.btn,.contact-link{width:100%;justify-content:center}.hero-actions{display:grid;grid-template-columns:1fr;gap:10px}.nav{padding-inline:10px}.nav-links{display:none}}
 
+#ha-loader img{width:min(230px,58vw);height:auto;display:block;filter:drop-shadow(0 0 35px #39d0c566);animation:haLogoFloat 2.8s ease-in-out infinite}
+@keyframes haLogoFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.025)}}
+@media(max-width:480px){#ha-loader img{width:min(190px,62vw)}}
 </style>
 </head>
 <body>
 <div id="ha-loader" role="status" aria-label="Loading Hassan Ali portfolio">
   <div class="ha-loader-inner">
-    <img class="ha-loader-logo" src="assets/hassan-ali-loader.svg" alt="Hassan Ali">
+    <img class="ha-loader-logo" src="assets/hassan-ali-logo.svg" alt="Hassan Ali">
     <div class="ha-loader-line"><div class="ha-loader-progress" id="ha-loader-progress"></div></div>
     <div class="ha-loader-label">Data • AI • Insights</div>
     <div class="ha-loader-percent" id="ha-loader-percent">0%</div>
