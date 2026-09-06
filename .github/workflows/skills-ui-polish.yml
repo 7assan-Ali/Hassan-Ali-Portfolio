@@ -1,0 +1,49 @@
+name: Polish Skills UI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  polish:
+    if: ${{ !contains(github.event.head_commit.message, 'remove one-time skills workflow') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Improve skills cards
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old = ".skills-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}.skill{padding:17px;border:1px solid var(--line);border-radius:17px;background:var(--surface);transition:.25s}.skill:hover{transform:translateY(-5px);border-color:#39d0c555;box-shadow:0 18px 40px #0003}.skill i{font-size:1.05rem;color:var(--accent)}.skill strong{display:block;font-size:.82rem;margin-top:8px}.skill small{display:block;color:var(--muted);font-size:.63rem;margin-top:3px}"
+          new = ".skills-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:24px}.skill{min-width:0;min-height:118px;padding:18px 18px 17px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,var(--surface2),var(--surface));display:grid;grid-template-columns:42px minmax(0,1fr);grid-template-rows:auto 1fr;column-gap:13px;align-items:start;position:relative;overflow:hidden;transition:transform .25s,border-color .25s,box-shadow .25s}.skill:before{content:\"\";position:absolute;inset:0;background:linear-gradient(135deg,#39d0c50d,transparent 55%);pointer-events:none}.skill:hover{transform:translateY(-5px);border-color:#39d0c566;box-shadow:0 18px 45px #0004}.skill i{grid-row:1 / span 2;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:1.05rem;color:var(--accent);background:#39d0c514;border:1px solid #39d0c52b;box-shadow:inset 0 0 20px #39d0c50b}.skill strong{display:block;font-size:.84rem;line-height:1.25;margin:2px 0 0;position:relative}.skill small{display:block;color:var(--muted);font-size:.64rem;line-height:1.45;margin-top:5px;position:relative;max-width:34ch}.skill:hover i{box-shadow:0 0 24px #39d0c51f,inset 0 0 20px #39d0c510}"
+          if old not in s:
+              raise SystemExit('Expected skills CSS was not found; refusing to modify index.html')
+          s = s.replace(old, new, 1)
+          extra = """
+          /* Skills UI polish */
+          #skills .copy{max-width:680px}
+          #skillTabs{margin-top:24px;margin-bottom:17px;gap:8px;align-items:center}
+          #skillTabs .tab{white-space:nowrap}
+          @media(max-width:1050px){.skills-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}}
+          @media(max-width:650px){#skillTabs{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;scrollbar-width:none}#skillTabs::-webkit-scrollbar{display:none}#skillTabs .tab{flex:0 0 auto}.skills-grid{grid-template-columns:1fr;gap:12px}.skill{min-height:104px}}
+          """
+          s = s.replace('</style>', extra + '\n</style>', 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit changes and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html .github/workflows/skills-ui-polish.yml
+          git commit -m "feat: redesign skills cards"
+          git push
+          git rm .github/workflows/skills-ui-polish.yml
+          git commit -m "chore: remove one-time skills workflow"
+          git push
