@@ -1,0 +1,39 @@
+name: Fix Soft Skills Cards
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: ${{ !contains(github.event.head_commit.message, 'fix soft skills cards') && !contains(github.event.head_commit.message, 'remove soft skills cards workflow') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore all soft skill cards
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          marker = '<div class="skill"><i class="fa-solid fa-comments"></i><strong>Communication</strong><small>Clear and professional communication</small></div>'
+          if marker not in s:
+              raise SystemExit('Communication card not found')
+          if '<strong>Teamwork</strong>' not in s:
+              extra = '''<div class="skill"><i class="fa-solid fa-people-group"></i><strong>Teamwork</strong><small>Collaborative and reliable team player</small></div><div class="skill"><i class="fa-solid fa-lightbulb"></i><strong>Problem Solving</strong><small>Structured thinking and practical solutions</small></div><div class="skill"><i class="fa-solid fa-clock"></i><strong>Time Management</strong><small>Prioritizing tasks and meeting deadlines</small></div><div class="skill"><i class="fa-solid fa-person-chalkboard"></i><strong>Presentation</strong><small>Turning findings into clear stories</small></div><div class="skill"><i class="fa-solid fa-arrows-rotate"></i><strong>Adaptability</strong><small>Fast learning and flexible mindset</small></div>'''
+              s = s.replace(marker, marker + extra, 1)
+          s = s.replace('<a href="#soft-skills">Soft Skills</a>', '')
+          p.write_text(s, encoding='utf-8')
+      - name: Commit and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "fix soft skills cards"
+          git push
+          git rm .github/workflows/fix-soft-skills-cards.yml
+          git commit -m "remove soft skills cards workflow"
+          git push
