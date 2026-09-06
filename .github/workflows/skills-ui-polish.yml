@@ -1,12 +1,12 @@
-name: Polish Skills UI
+name: Merge Skills Sections
 
 on:
   push:
     branches: [main]
 
 jobs:
-  polish:
-    if: ${{ !contains(github.event.head_commit.message, 'remove one-time skills workflow') }}
+  merge-skills:
+    if: ${{ !contains(github.event.head_commit.message, 'feat: merge technical and soft skills') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -14,35 +14,78 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Improve skills cards
+      - name: Merge skills into one section
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
+
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          old = ".skills-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:11px}.skill{padding:17px;border:1px solid var(--line);border-radius:17px;background:var(--surface);transition:.25s}.skill:hover{transform:translateY(-5px);border-color:#39d0c555;box-shadow:0 18px 40px #0003}.skill i{font-size:1.05rem;color:var(--accent)}.skill strong{display:block;font-size:.82rem;margin-top:8px}.skill small{display:block;color:var(--muted);font-size:.63rem;margin-top:3px}"
-          new = ".skills-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:24px}.skill{min-width:0;min-height:118px;padding:18px 18px 17px;border:1px solid var(--line);border-radius:20px;background:linear-gradient(145deg,var(--surface2),var(--surface));display:grid;grid-template-columns:42px minmax(0,1fr);grid-template-rows:auto 1fr;column-gap:13px;align-items:start;position:relative;overflow:hidden;transition:transform .25s,border-color .25s,box-shadow .25s}.skill:before{content:\"\";position:absolute;inset:0;background:linear-gradient(135deg,#39d0c50d,transparent 55%);pointer-events:none}.skill:hover{transform:translateY(-5px);border-color:#39d0c566;box-shadow:0 18px 45px #0004}.skill i{grid-row:1 / span 2;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:1.05rem;color:var(--accent);background:#39d0c514;border:1px solid #39d0c52b;box-shadow:inset 0 0 20px #39d0c50b}.skill strong{display:block;font-size:.84rem;line-height:1.25;margin:2px 0 0;position:relative}.skill small{display:block;color:var(--muted);font-size:.64rem;line-height:1.45;margin-top:5px;position:relative;max-width:34ch}.skill:hover i{box-shadow:0 0 24px #39d0c51f,inset 0 0 20px #39d0c510}"
-          if old not in s:
-              raise SystemExit('Expected skills CSS was not found; refusing to modify index.html')
-          s = s.replace(old, new, 1)
-          extra = """
-          /* Skills UI polish */
-          #skills .copy{max-width:680px}
-          #skillTabs{margin-top:24px;margin-bottom:17px;gap:8px;align-items:center}
-          #skillTabs .tab{white-space:nowrap}
-          @media(max-width:1050px){.skills-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}}
-          @media(max-width:650px){#skillTabs{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;scrollbar-width:none}#skillTabs::-webkit-scrollbar{display:none}#skillTabs .tab{flex:0 0 auto}.skills-grid{grid-template-columns:1fr;gap:12px}.skill{min-height:104px}}
-          """
-          s = s.replace('</style>', extra + '\n</style>', 1)
+
+          # Remove the standalone Soft Skills section, but preserve its cards.
+          soft_match = re.search(r'<section id="soft-skills">.*?</section>', s, re.S)
+          if not soft_match:
+              raise SystemExit('Standalone Soft Skills section was not found; refusing to modify index.html')
+
+          soft_section = soft_match.group(0)
+          grid_match = re.search(r'<div class="skills-grid" style="margin-top:23px">(.*?)</div></div></section>', soft_section, re.S)
+          if not grid_match:
+              raise SystemExit('Soft Skills cards were not found; refusing to modify index.html')
+
+          soft_cards = grid_match.group(1).strip()
+          s = s[:soft_match.start()] + s[soft_match.end():]
+
+          # Keep one Skills section and divide it visually into Technical Skills and Soft Skills.
+          s = s.replace(
+              '<h2 class="title">Technical <span>Skills</span></h2>',
+              '<h2 class="title">Technical & <span>Professional Skills</span></h2>',
+              1
+          )
+
+          s = s.replace(
+              '<p class="copy">A practical toolkit across data analysis, BI, programming, databases, and AI.</p><div class="tabs" id="skillTabs">',
+              '<p class="copy">A practical toolkit across data analysis, BI, programming, databases, AI, and professional strengths.</p><div class="skill-part"><div class="skill-part-head"><span class="skill-part-kicker">01 · Technical</span><h3>Technical Skills</h3><p>Core technologies and tools I use for data, analytics, BI, programming, and AI.</p></div><div class="tabs" id="skillTabs">',
+              1
+          )
+
+          s = s.replace(
+              '<div class="skills-grid" id="skillsGrid"></div></div></section>',
+              '<div class="skills-grid" id="skillsGrid"></div></div><div class="skill-part skill-part-soft"><div class="skill-part-head"><span class="skill-part-kicker">02 · Professional</span><h3>Soft Skills</h3><p>Professional strengths that support collaboration, communication, problem solving, and data storytelling.</p></div><div class="skills-grid soft-skills-grid">' + soft_cards + '</div></div></div></section>',
+              1
+          )
+
+          if 'id="soft-skills"' in s:
+              raise SystemExit('Soft Skills section still exists after merge')
+
+          # Remove the old standalone Soft Skills navigation item if present.
+          s = s.replace('<a href="#soft-skills">Soft Skills</a>', '', 1)
+
+          css = r'''
+          /* Unified Skills section */
+          #skills .copy{max-width:760px}
+          .skill-part{margin-top:34px;padding:28px;border:1px solid var(--line);border-radius:26px;background:linear-gradient(145deg,#0e1d30aa,#09132188);box-shadow:0 16px 55px #0002}
+          .skill-part + .skill-part{margin-top:18px}
+          .skill-part-head{margin-bottom:20px}
+          .skill-part-kicker{display:inline-block;font-size:.6rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:6px}
+          .skill-part-head h3{font:700 clamp(1.25rem,2vw,1.65rem)/1.1 'Space Grotesk';margin:0}
+          .skill-part-head p{color:var(--muted);font-size:.74rem;margin:7px 0 0;max-width:650px}
+          .skill-part .tabs{margin:0 0 16px}
+          .skill-part .skills-grid{margin-top:0}
+          .soft-skills-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+          @media(max-width:1050px){.soft-skills-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+          @media(max-width:650px){.skill-part{padding:20px;border-radius:21px}.soft-skills-grid{grid-template-columns:1fr}}
+          '''
+          s = s.replace('</style>', css + '\n</style>', 1)
           p.write_text(s, encoding='utf-8')
           PY
 
-      - name: Commit changes and remove workflow
+      - name: Commit and remove one-time workflow
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html .github/workflows/skills-ui-polish.yml
-          git commit -m "feat: redesign skills cards"
+          git commit -m "feat: merge technical and soft skills"
           git push
           git rm .github/workflows/skills-ui-polish.yml
           git commit -m "chore: remove one-time skills workflow"
