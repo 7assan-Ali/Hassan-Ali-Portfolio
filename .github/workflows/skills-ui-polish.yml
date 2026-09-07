@@ -3,13 +3,15 @@ name: Global Skills Portfolio Redesign
 on:
   push:
     branches: [main]
+    paths:
+      - .skills-layout-trigger-5
+
+permissions:
+  contents: write
 
 jobs:
   redesign-skills:
-    if: ${{ !contains(github.event.head_commit.message, 'chore: remove one-time skills redesign workflows') }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,14 +27,12 @@ jobs:
 
           technical = '''<section id="skills"><div class="wrap reveal"><div class="kicker">Expertise</div><h2 class="title">My <span>Skills</span></h2><p class="copy">A focused overview of the technical tools and professional strengths I use to turn data into clear, actionable outcomes.</p><div class="skills-panels"><article class="skills-panel"><div class="skills-panel-head"><div class="skills-panel-icon"><i class="fa-solid fa-code"></i></div><div><h3>Technical Skills</h3><p>Data, analytics, BI, programming, databases, and AI.</p></div></div><div class="skill-pills"><span>Python</span><span>Pandas</span><span>NumPy</span><span>Matplotlib</span><span>Plotly</span><span>SQL</span><span>SQL Server</span><span>Power BI</span><span>DAX</span><span>Power Query</span><span>Excel</span><span>Tableau</span><span>Machine Learning</span><span>Generative AI</span><span>Git &amp; GitHub</span></div></article><article class="skills-panel"><div class="skills-panel-head"><div class="skills-panel-icon"><i class="fa-solid fa-people-group"></i></div><div><h3>Soft Skills</h3><p>Professional strengths that support collaboration and communication.</p></div></div><div class="skill-pills"><span>Communication</span><span>Teamwork</span><span>Problem Solving</span><span>Time Management</span><span>Presentation</span><span>Adaptability</span></div></article></div><div id="skillTabs" class="skills-legacy" aria-hidden="true"></div><div id="skillsGrid" class="skills-legacy" aria-hidden="true"></div></div></section>'''
 
-          # Replace the existing technical section and remove the old standalone soft-skills section.
           s, n = re.subn(r'<section id="skills">.*?</section>', technical, s, count=1, flags=re.S)
           if n != 1:
-              raise SystemExit('Technical Skills section not found; refusing to modify index.html')
+              raise SystemExit('Technical Skills section not found')
           s, n = re.subn(r'<section id="soft-skills">.*?</section>', '', s, count=1, flags=re.S)
           if n != 1:
-              raise SystemExit('Soft Skills section not found; refusing to modify index.html')
-
+              raise SystemExit('Soft Skills section not found')
           s = s.replace('<a href="#soft-skills">Soft Skills</a>', '', 1)
 
           css = '''
@@ -57,7 +57,6 @@ jobs:
 '''
           if '/* Global Skills portfolio redesign */' not in s:
               s = s.replace('</style>', css + '\n</style>', 1)
-
           p.write_text(s, encoding='utf-8')
           PY
 
@@ -69,8 +68,8 @@ jobs:
           git commit -m "feat: redesign skills section"
           git push
 
-      - name: Remove one-time workflows and triggers
+      - name: Clean one-time workflow files
         run: |
-          git rm -f .github/workflows/skills-ui-polish.yml .github/workflows/skills-layout-global.yml .skills-layout-trigger .skills-layout-trigger-2 .skills-layout-trigger-3 || true
+          git rm -f .github/workflows/skills-ui-polish.yml .github/workflows/skills-layout-global.yml .skills-layout-trigger .skills-layout-trigger-2 .skills-layout-trigger-3 .skills-layout-trigger-4 .skills-layout-trigger-5 || true
           git commit -m "chore: remove one-time skills redesign workflows" || true
           git push
