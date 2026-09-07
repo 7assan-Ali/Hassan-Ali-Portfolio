@@ -2,35 +2,33 @@ name: Global Skills Layout Polish
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
   polish:
-    if: ${{ !contains(github.event.head_commit.message, 'chore: remove one-time global skills workflow') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Redesign skills section
-        shell: python
         run: |
+          python - <<'PY'
           from pathlib import Path
           import re
 
           path = Path('index.html')
           html = path.read_text(encoding='utf-8')
-
-          section = r'''<section id="skills"><div class="wrap reveal"><div class="kicker">Expertise</div><h2 class="title">My <span>Skills</span></h2><p class="copy">A focused overview of the technical tools and professional strengths I use to turn data into clear, actionable outcomes.</p><div class="skills-panels"><article class="skills-panel"><div class="skills-panel-head"><div class="skills-panel-icon"><i class="fa-solid fa-code"></i></div><div><h3>Technical Skills</h3><p>Data, analytics, BI, programming, and AI.</p></div></div><div class="skill-pills"><span>Python</span><span>Pandas</span><span>NumPy</span><span>Matplotlib</span><span>Plotly</span><span>SQL</span><span>SQL Server</span><span>Power BI</span><span>DAX</span><span>Power Query</span><span>Excel</span><span>Tableau</span><span>Machine Learning</span><span>Generative AI</span><span>Git &amp; GitHub</span></div></article><article class="skills-panel"><div class="skills-panel-head"><div class="skills-panel-icon"><i class="fa-solid fa-people-group"></i></div><div><h3>Soft Skills</h3><p>Professional strengths that support collaboration and communication.</p></div></div><div class="skill-pills"><span>Communication</span><span>Teamwork</span><span>Problem Solving</span><span>Time Management</span><span>Presentation</span><span>Adaptability</span></div></article></div><div id="skillTabs" class="skills-legacy" aria-hidden="true"></div><div id="skillsGrid" class="skills-legacy" aria-hidden="true"></div></div></section>'''
-
-          new_html, count = re.subn(r'<section id="skills">.*?</section>', section, html, count=1, flags=re.S)
+          section = '''<section id="skills"><div class="wrap reveal"><div class="kicker">Expertise</div><h2 class="title">My <span>Skills</span></h2><p class="copy">A focused overview of the technical tools and professional strengths I use to turn data into clear, actionable outcomes.</p><div class="skills-panels"><article class="skills-panel"><div class="skills-panel-head"><div class="skills-panel-icon"><i class="fa-solid fa-code"></i></div><div><h3>Technical Skills</h3><p>Data, analytics, BI, programming, and AI.</p></div></div><div class="skill-pills"><span>Python</span><span>Pandas</span><span>NumPy</span><span>Matplotlib</span><span>Plotly</span><span>SQL</span><span>SQL Server</span><span>Power BI</span><span>DAX</span><span>Power Query</span><span>Excel</span><span>Tableau</span><span>Machine Learning</span><span>Generative AI</span><span>Git &amp; GitHub</span></div></article><article class="skills-panel"><div class="skills-panel-head"><div class="skills-panel-icon"><i class="fa-solid fa-people-group"></i></div><div><h3>Soft Skills</h3><p>Professional strengths that support collaboration and communication.</p></div></div><div class="skill-pills"><span>Communication</span><span>Teamwork</span><span>Problem Solving</span><span>Time Management</span><span>Presentation</span><span>Adaptability</span></div></article></div><div id="skillTabs" class="skills-legacy" aria-hidden="true"></div><div id="skillsGrid" class="skills-legacy" aria-hidden="true"></div></div></section>'''
+          html, count = re.subn(r'<section id="skills">.*?</section>', section, html, count=1, flags=re.S)
           if count != 1:
-              raise SystemExit('Skills section was not found; no changes made.')
+              raise SystemExit('Skills section not found')
 
-          css = r'''
+          css = '''
 
 /* Global skills section redesign */
 .skills-panels{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:30px}
@@ -42,7 +40,7 @@ jobs:
 .skills-panel-head h3{font:700 1.2rem/1.2 'Space Grotesk';margin:0;color:var(--text)}
 .skills-panel-head p{font-size:.68rem;color:var(--muted);margin:4px 0 0;line-height:1.45}
 .skill-pills{display:flex;flex-wrap:wrap;gap:10px;position:relative}
-.skill-pills span{display:inline-flex;align-items:center;min-height:40px;padding:8px 15px;border:1px solid var(--line);border-radius:999px;background:color-mix(in srgb,var(--surface2) 88%,var(--accent) 12%);color:var(--text);font-size:.72rem;font-weight:700;letter-spacing:.01em;box-shadow:inset 0 1px 0 #ffffff08;transition:transform .2s,border-color .2s,color .2s,background .2s}
+.skill-pills span{display:inline-flex;align-items:center;min-height:40px;padding:8px 15px;border:1px solid var(--line);border-radius:999px;background:#ffffff07;color:var(--text);font-size:.72rem;font-weight:700;letter-spacing:.01em;box-shadow:inset 0 1px 0 #ffffff08;transition:transform .2s,border-color .2s,color .2s,background .2s}
 .skill-pills span:hover{transform:translateY(-2px);color:var(--accent);border-color:#39d0c566;background:#39d0c510}
 .skills-legacy{display:none!important}
 :root.light .skills-panel{box-shadow:0 18px 45px #16334b12}
@@ -51,24 +49,18 @@ jobs:
 @media(max-width:800px){.skills-panels{grid-template-columns:1fr;gap:15px}.skills-panel{padding:23px}}
 @media(max-width:520px){.skills-panels{margin-top:22px}.skills-panel{border-radius:22px;padding:20px}.skills-panel-head{margin-bottom:19px}.skill-pills{gap:8px}.skill-pills span{min-height:38px;padding:7px 12px;font-size:.68rem}}
 '''
+          if '/* Global skills section redesign */' not in html:
+              html = html.replace('</style>', css + '\n</style>', 1)
+          path.write_text(html, encoding='utf-8')
+          PY
 
-          marker = '/* Skills UI polish */'
-          if '/* Global skills section redesign */' not in new_html:
-              if marker in new_html:
-                  new_html = new_html.replace(marker, css + '\n' + marker, 1)
-              else:
-                  new_html = new_html.replace('</style>', css + '\n</style>', 1)
-
-          path.write_text(new_html, encoding='utf-8')
-
-      - name: Commit changes and remove workflow
-        shell: bash
+      - name: Commit and clean up
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "feat: redesign skills section" || true
-          rm -f .github/workflows/skills-layout-global.yml
-          git add .github/workflows/skills-layout-global.yml
-          git commit -m "chore: remove one-time global skills workflow" || true
+          git commit -m "feat: redesign skills section"
+          rm -f .github/workflows/skills-layout-global.yml .skills-layout-trigger .skills-layout-trigger-2
+          git add -A
+          git commit -m "chore: remove one-time global skills workflow"
           git push
