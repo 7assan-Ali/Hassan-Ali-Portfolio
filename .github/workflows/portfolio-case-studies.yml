@@ -1,0 +1,74 @@
+name: Portfolio Project Case Studies
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Add case study presentation
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+
+          css='''
+          /* Project case-study presentation */
+          .case-study{margin-top:18px;padding:17px;border:1px solid #39d0c52b;border-radius:18px;background:linear-gradient(145deg,#39d0c508,transparent);display:grid;gap:13px}
+          .case-study-head{display:flex;align-items:center;gap:9px;color:var(--accent);font-size:.67rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+          .case-study-head i{font-size:.78rem}
+          .case-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+          .case-item{padding:12px;border:1px solid var(--line);border-radius:14px;background:#ffffff04}
+          .case-item strong{display:block;font:700 .72rem 'Space Grotesk';color:var(--text);margin-bottom:4px}
+          .case-item span{display:block;color:var(--muted);font-size:.64rem;line-height:1.55}
+          @media(max-width:700px){.case-grid{grid-template-columns:1fr}.case-study{padding:14px}}
+          '''
+          marker='section{padding:125px 0 0}'
+          if '/* Project case-study presentation */' not in s:
+              s=s.replace(marker,css+'\n'+marker,1)
+
+          old="$('modalDescription').textContent=p.desc;"
+          new="""const caseStudies={
+          'Olist E-Commerce Data Analysis':{problem:'Understand e-commerce performance, customer behavior, and sales patterns from a real-world dataset.',approach:'Clean and explore the data, analyze customer and sales behavior, then communicate findings through dashboards.',outcome:'A structured analytical view of e-commerce performance with practical business insights.'},
+          'Power BI Car Sales Dashboard':{problem:'Turn automotive sales data into an interactive reporting experience that makes trends and performance easier to understand.',approach:'Prepare the data, build the BI model, apply DAX calculations, and present the results through Power BI visuals.',outcome:'An interactive dashboard focused on reporting, trends, and decision-friendly visual storytelling.'},
+          'Used Car Price Trends':{problem:'Explore how used-car prices behave and identify useful relationships in the available dataset.',approach:'Perform exploratory analysis with Python and Pandas, then visualize important price patterns and relationships.',outcome:'A practical exploratory analysis that turns raw used-car data into understandable price trends.'},
+          'Outlier Detection & Treatment':{problem:'Detect unusual observations that can distort statistical analysis and downstream results.',approach:'Apply practical statistical outlier-detection and treatment techniques using Python, Pandas, NumPy, and statistics.',outcome:'A reusable analytical workflow for identifying and treating outliers before deeper analysis.'},
+          'SQL Data Cleaning':{problem:'Prepare structured data for reliable analysis by identifying and resolving data-quality issues.',approach:'Use SQL Server and T-SQL for cleaning, transformation, validation, and structured data preparation.',outcome:'A clear SQL-based data-cleaning workflow designed to produce analysis-ready data.'},
+          'Excel Data Analysis':{problem:'Organize and analyze business-style data in a familiar spreadsheet environment.',approach:'Use Excel analysis workflows, including structured transformations and reporting techniques.',outcome:'A practical Excel-based analysis workflow for turning tabular data into useful reporting.'},
+          'Tableau Sales Analysis':{problem:'Communicate sales patterns through interactive visual analytics.',approach:'Explore sales data and present findings with Tableau-focused visual storytelling.',outcome:'An interactive sales-analysis experience designed to make trends easier to interpret.'},
+          'Python Data Analysis Projects':{problem:'Solve practical data-analysis tasks with a flexible programming workflow.',approach:'Use Python and data-analysis libraries for cleaning, exploration, visualization, and communicating findings.',outcome:'Hands-on Python analysis work demonstrating an end-to-end analytical workflow.'},
+          'E-Commerce System':{problem:'Build an e-commerce software project around core online-shopping functionality.',approach:'Develop the project as a practical software implementation.',outcome:'A hands-on software project demonstrating application-development practice.'}
+          };const cs=caseStudies[p.title];$('modalDescription').innerHTML=cs?`<p style="margin:0;color:var(--muted)">${p.desc}</p><div class="case-study"><div class="case-study-head"><i class="fa-solid fa-route"></i> Case Study Snapshot</div><div class="case-grid"><div class="case-item"><strong>Problem</strong><span>${cs.problem}</span></div><div class="case-item"><strong>Approach</strong><span>${cs.approach}</span></div><div class="case-item"><strong>Outcome</strong><span>${cs.outcome}</span></div></div></div>`:p.desc;"""
+          if old in s and 'const caseStudies=' not in s:
+              s=s.replace(old,new,1)
+
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Validate
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('index.html').read_text(encoding='utf-8')
+          checks=['Project case-study presentation','const caseStudies=','Case Study Snapshot','Problem','Approach','Outcome']
+          missing=[x for x in checks if x not in s]
+          if missing: raise SystemExit(f'Missing: {missing}')
+          print('Case-study upgrade validated')
+          PY
+      - name: Commit and remove workflow
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'feat: add project case study snapshots' || true
+          rm -f .github/workflows/portfolio-case-studies.yml
+          git add -A
+          git commit -m 'chore: remove one-time case study workflow' || true
+          git push
